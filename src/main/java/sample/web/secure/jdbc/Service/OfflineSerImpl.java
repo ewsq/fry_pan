@@ -37,6 +37,7 @@ public class OfflineSerImpl implements OfflineSer {
         this.offlineTaskDao = offlineTaskDao;
     }
 
+    @Override
     @Scheduled(cron = "0 * * * * *")
     public void download() {
         if (!systemSer.lowPressure() || offlineTaskDao.count() == 0) {
@@ -52,8 +53,9 @@ public class OfflineSerImpl implements OfflineSer {
                 httpcon.addRequestProperty("User-Agent", "Mozilla/4.0");
                 InputStream is = httpcon.getInputStream();
                 String filename = FilenameUtils.getName(url.getPath());
-                if (filename == "" || filename == "/")
+                if (filename == "" || filename == "/") {
                     filename = "index.html";
+                }
                 fileUploadSer.putFile("/user/" + task.getUsername() + "/" + task.getPath() + "/" + filename, is);
                 is.close();
                 offlineTaskDao.delete(task);
@@ -63,20 +65,24 @@ public class OfflineSerImpl implements OfflineSer {
         }
     }
 
+    @Override
     public void append(String username, String path, String url) {
         offlineTaskDao.save(new OfflineTask(username, path, url));
     }
 
+    @Override
     public void pop(String username, long ids[]) {
         for (long id: ids) {
             offlineTaskDao.deleteByUsernameAndId(username, id);
         }
     }
 
+    @Override
     public void clear(String username) {
         offlineTaskDao.deleteByUsername(username);
     }
 
+    @Override
     public List<OfflineTask> getAll(String username) {
         return offlineTaskDao.findByUsername(username);
     }

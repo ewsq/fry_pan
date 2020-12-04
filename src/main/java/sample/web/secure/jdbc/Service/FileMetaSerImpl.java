@@ -211,6 +211,7 @@ public class FileMetaSerImpl implements FileMetaSer {
     }
 
 
+    @Override
     public void unGarbage(FileMeta fileMeta) {
         fileMeta.setGarbage(null);
         fileMetaRepository.save(fileMeta);

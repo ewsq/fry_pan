@@ -20,21 +20,24 @@ import java.io.OutputStream;
 public class FileUploadSerImpl implements FileUploadSer {
     private org.apache.hadoop.conf.Configuration config;
     private FileSystem fileSystem;
+    private String defaultFS = "hdfs://hbmaster:9000/";
 
     @Autowired
     public FileUploadSerImpl() {
-        config = new org.apache.hadoop.conf.Configuration();
+        config = new org.apache.hadoop.conf.Configuration();/*
         config.addResource(new Path("/usr/lib/hadoop/etc/hadoop/core-site.xml"));
         config.addResource(new Path("/usr/lib/hadoop/etc/hadoop/hdfs-site.xml"));
         config.set("fs.hdfs.impl", org.apache.hadoop.hdfs.DistributedFileSystem.class.getName());
-        config.set("fs.file.impl",org.apache.hadoop.fs.LocalFileSystem.class.getName());
+        config.set("fs.file.impl",org.apache.hadoop.fs.LocalFileSystem.class.getName());*/
         try {
+            config.set("fs.defaultFS", defaultFS.trim());
             fileSystem = FileSystem.get(config);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
+    @Override
     protected void finalize() {
         try {
             fileSystem.close();
@@ -46,7 +49,7 @@ public class FileUploadSerImpl implements FileUploadSer {
     @Override
     public FileStatus[] listFiles(String path) {
         try {
-            Path p = new Path("hdfs://localhost:9000" + path);
+            Path p = new Path(defaultFS + path);
             return fileSystem.listStatus(p);
         } catch (IOException e) {
             e.printStackTrace();
@@ -57,7 +60,7 @@ public class FileUploadSerImpl implements FileUploadSer {
     @Override
     public void mkdir(String path) {
         try {
-            Path p = new Path("hdfs://localhost:9000" + path);
+            Path p = new Path(defaultFS + path);
             fileSystem.mkdirs(p);
         } catch (IOException e) {
             e.printStackTrace();
@@ -67,7 +70,7 @@ public class FileUploadSerImpl implements FileUploadSer {
     @Override
     public void putFile(String path, InputStream is) {
         try {
-            Path p = new Path("hdfs://localhost:9000" + path);
+            Path p = new Path(defaultFS + path);
             if (fileSystem.exists(p)) {
                 throw new IOException();
             }
@@ -82,8 +85,8 @@ public class FileUploadSerImpl implements FileUploadSer {
     @Override
     public String getFile(String path, OutputStream os) {
         try {
-            Path p = new Path("hdfs://localhost:9000" + path);
-            if (!fileSystem.exists(p)){
+            Path p = new Path(defaultFS + path);
+            if (!fileSystem.exists(p)) {
                 throw new IOException();
             }
 
@@ -91,7 +94,7 @@ public class FileUploadSerImpl implements FileUploadSer {
             org.apache.commons.io.IOUtils.copy(is, os);
             is.close();
             return p.getName();
-        } catch (IOException ex){
+        } catch (IOException ex) {
             throw new RuntimeException("IOError writing file to output stream.");
         }
     }
@@ -99,7 +102,7 @@ public class FileUploadSerImpl implements FileUploadSer {
     @Override
     public InputStream getFileInputStream(String path) {
         try {
-            Path p = new Path("hdfs://localhost:9000" + path);
+            Path p = new Path(defaultFS + path);
             if (!fileSystem.exists(p)) {
                 throw new IOException();
             }
@@ -113,7 +116,7 @@ public class FileUploadSerImpl implements FileUploadSer {
     @Override
     public OutputStream putFileOutputStream(String path) {
         try {
-            Path p = new Path("hdfs://localhost:9000" + path);
+            Path p = new Path(defaultFS + path);
             if (fileSystem.exists(p)) {
                 throw new IOException();
             }
@@ -123,9 +126,10 @@ public class FileUploadSerImpl implements FileUploadSer {
             throw new RuntimeException("IOError reading file from input stream.");
         }
     }
+
     @Override
     public boolean exist(String path) {
-        Path p = new Path("hdfs://localhost:9000" + path);
+        Path p = new Path(defaultFS + path);
         try {
             return fileSystem.exists(p);
         } catch (IOException ex) {
@@ -136,7 +140,7 @@ public class FileUploadSerImpl implements FileUploadSer {
 
     @Override
     public void deleteFile(String path) {
-        Path p = new Path("hdfs://localhost:9000" + path);
+        Path p = new Path(defaultFS + path);
         try {
             fileSystem.delete(p, false);
         } catch (IOException ex) {
@@ -146,8 +150,8 @@ public class FileUploadSerImpl implements FileUploadSer {
 
     @Override
     public void moveFile(String from, String to) {
-        Path f = new Path("hdfs://localhost:9000" + from);
-        Path t = new Path("hdfs://localhost:9000" + to);
+        Path f = new Path(defaultFS + from);
+        Path t = new Path(defaultFS + to);
         try {
             fileSystem.rename(f, t);
         } catch (IOException ex) {
@@ -161,8 +165,8 @@ public class FileUploadSerImpl implements FileUploadSer {
     }
 
     @Override
-    public String dupTemp(String path) throws IOException{
-        Path p = new Path("hdfs://localhost:9000" + path);
+    public String dupTemp(String path) throws IOException {
+        Path p = new Path(defaultFS + path);
         String local_path = File.createTempFile("frytemp", "." + FilenameUtils.getExtension(path)).getAbsolutePath();
         fileSystem.copyToLocalFile(p, new Path(local_path));
         return local_path;
@@ -170,8 +174,8 @@ public class FileUploadSerImpl implements FileUploadSer {
 
     @Override
     public void hardlink(String from, String to) {
-        Path f = new Path("hdfs://localhost:9000" + from);
-        Path t = new Path("hdfs://localhost:9000" + to);
+        Path f = new Path(defaultFS + from);
+        Path t = new Path(defaultFS + to);
         try {
             fileSystem.createSymlink(f, t, true);
         } catch (IOException ex) {

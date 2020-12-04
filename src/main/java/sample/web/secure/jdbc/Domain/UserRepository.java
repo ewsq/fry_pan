@@ -15,10 +15,14 @@ import java.util.List;
 @Transactional
 public interface UserRepository extends CrudRepository<UserInfo, String>{
     UserInfo findByEmail(String email);
+
     UserInfo findByUsername(String username);
+
     @Query("SELECT u FROM UserInfo u ORDER BY RAND()")
     Page<UserInfo> getRandom(Pageable p);
+
     @Query("SELECT u FROM UserInfo u WHERE u.username NOT IN ?1 ORDER BY RAND()")
     Page<UserInfo> getRandomExcept(List<String> username, Pageable p);
+
     List<UserInfo> findByUsernameIn(List<String> usernames);
 }
